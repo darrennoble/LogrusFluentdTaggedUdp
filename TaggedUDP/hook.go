@@ -7,7 +7,8 @@ import (
 )
 
 const (
-	defaultTag = "\t"
+	defaultSeparator = "\t"
+	defaultTag       = "applog"
 )
 
 var defaultLevels = []logrus.Level{
@@ -26,20 +27,24 @@ var defaultLevels = []logrus.Level{
 type TaggedUDP struct {
 	Host      string
 	Port      int
-	Tag       string
 	LogLevels []logrus.Level
 	Formatter Formatter
+	Seperator string
+	Tag       string
+	TagField  string
 	soc       net.Conn
+	tagBytes  []byte
 }
 
 // New returns a new TaggedUDP hook
-func New(host string, port int) (*TaggedUDP, error) {
+func New(host string, port int, tag string) (*TaggedUDP, error) {
 	t := TaggedUDP{
 		Host:      host,
 		Port:      port,
-		Tag:       defaultTag,
 		LogLevels: defaultLevels,
 		Formatter: Formatter{},
+		Seperator: defaultSeparator,
+		Tag:       tag,
 	}
 
 	err := t.Connect()
@@ -63,12 +68,22 @@ func (h *TaggedUDP) Close() error {
 
 // Fire sends a log messages to fluentd
 func (h *TaggedUDP) Fire(entry *logrus.Entry) error {
+	tag := h.Tag
+
+	if h.TagField != "" {
+		if newTag, ok := entry.Data[h.TagField]; ok {
+			if newTag, ok := newTag.(string); ok {
+				tag = newTag
+			}
+		}
+	}
+
 	msg, err := h.Formatter.Format(entry)
 	if err != nil {
 		return fmt.Errorf("Error formatting log message: %s", err.Error())
 	}
 
-	err = h.send(msg)
+	err = h.send(tag, msg)
 	if err != nil {
 		return fmt.Errorf("Error sending log message: %s", err.Error())
 	}
@@ -76,10 +91,14 @@ func (h *TaggedUDP) Fire(entry *logrus.Entry) error {
 	return nil
 }
 
-func (h *TaggedUDP) send(msg []byte) error {
+func (h *TaggedUDP) send(tag string, msg []byte) error {
+	b := []byte(fmt.Sprintf("%s%s", tag, h.Seperator))
+
+	b = append(h.tagBytes, msg...)
+
 	sent := 0
-	for sent < len(msg) {
-		newSent, err := h.soc.Write(msg[sent:])
+	for sent < len(b) {
+		newSent, err := h.soc.Write(b[sent:])
 		if err != nil {
 			return err
 		}
