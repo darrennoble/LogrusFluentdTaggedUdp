@@ -70,7 +70,7 @@ func (h *TaggedUDP) Fire(entry *logrus.Entry) error {
 
 	err = h.send(msg)
 	if err != nil {
-		fmt.Errorf("Error sending log message: %s", err.Error())
+		return fmt.Errorf("Error sending log message: %s", err.Error())
 	}
 
 	return nil
@@ -93,4 +93,9 @@ func (h *TaggedUDP) send(msg []byte) error {
 // Levels returns the supported levels
 func (h *TaggedUDP) Levels() []logrus.Level {
 	return h.LogLevels
+}
+
+// SetLevels sets the log levels used by this TaggedUDP
+func (h *TaggedUDP) SetLevels(levels []logrus.Level) {
+	h.LogLevels = levels
 }
