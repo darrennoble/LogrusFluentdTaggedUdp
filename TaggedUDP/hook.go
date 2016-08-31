@@ -33,7 +33,6 @@ type TaggedUDP struct {
 	Tag       string
 	TagField  string
 	soc       net.Conn
-	tagBytes  []byte
 }
 
 // New returns a new TaggedUDP hook
@@ -94,7 +93,7 @@ func (h *TaggedUDP) Fire(entry *logrus.Entry) error {
 func (h *TaggedUDP) send(tag string, msg []byte) error {
 	b := []byte(fmt.Sprintf("%s%s", tag, h.Seperator))
 
-	b = append(h.tagBytes, msg...)
+	b = append(b, msg...)
 
 	sent := 0
 	for sent < len(b) {
