@@ -46,6 +46,8 @@ func New(host string, port int, tag string) (*TaggedUDP, error) {
 		Tag:       tag,
 	}
 
+	t.Formatter.StaticFields = logrus.Fields{}
+
 	err := t.Connect()
 	if err != nil {
 		return nil, err
