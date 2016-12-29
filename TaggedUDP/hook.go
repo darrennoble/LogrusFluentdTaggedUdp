@@ -4,11 +4,13 @@ import (
 	"fmt"
 	"github.com/Sirupsen/logrus"
 	"net"
+	"strings"
 )
 
 const (
-	defaultSeparator = "\t"
-	defaultTag       = "applog"
+	defaultSeparator   = "\t"
+	defaultReplacement = "    "
+	defaultTag         = "applog"
 )
 
 var defaultLevels = []logrus.Level{
@@ -25,25 +27,27 @@ var defaultLevels = []logrus.Level{
 // Fluentd: http://www.fluentd.org/
 // Tagged UDP Plugin: https://github.com/toyokazu/fluent-plugin-tagged_udp
 type TaggedUDP struct {
-	Host      string
-	Port      int
-	LogLevels []logrus.Level
-	Formatter Formatter
-	Seperator string
-	Tag       string
-	TagField  string
-	soc       net.Conn
+	Host           string
+	Port           int
+	LogLevels      []logrus.Level
+	Formatter      Formatter
+	Seperator      string
+	SepReplacement string
+	Tag            string
+	TagField       string
+	soc            net.Conn
 }
 
 // New returns a new TaggedUDP hook
 func New(host string, port int, tag string) (*TaggedUDP, error) {
 	t := TaggedUDP{
-		Host:      host,
-		Port:      port,
-		LogLevels: defaultLevels,
-		Formatter: Formatter{},
-		Seperator: defaultSeparator,
-		Tag:       tag,
+		Host:           host,
+		Port:           port,
+		LogLevels:      defaultLevels,
+		Formatter:      Formatter{},
+		Seperator:      defaultSeparator,
+		SepReplacement: defaultReplacement,
+		Tag:            tag,
 	}
 
 	t.Formatter.StaticFields = logrus.Fields{}
@@ -94,6 +98,8 @@ func (h *TaggedUDP) Fire(entry *logrus.Entry) error {
 
 func (h *TaggedUDP) send(tag string, msg []byte) error {
 	b := []byte(fmt.Sprintf("%s%s", tag, h.Seperator))
+
+	msg = []byte(strings.Replace(string(msg), h.Seperator, h.SepReplacement, -1))
 
 	b = append(b, msg...)
 
