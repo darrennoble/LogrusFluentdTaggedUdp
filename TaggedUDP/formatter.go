@@ -24,12 +24,12 @@ func (f *Formatter) Format(entry *logrus.Entry) ([]byte, error) {
 
 	for k, v := range entry.Data {
 		switch v := v.(type) {
-		case error:
-			// Otherwise errors are ignored by `encoding/json`
-			// https://github.com/Sirupsen/logrus/issues/377
-			fields[k] = v.Error()
-		default:
+		case bool, int, int8, int16, int32, int64, uint, uint8, uint16, uint32, uint64, float32, float64, string:
 			fields[k] = v
+		case []byte:
+			fields[k] = string(v)
+		default:
+			fields[k] = fmt.Sprintf("%+v", v)
 		}
 	}
 
