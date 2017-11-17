@@ -3,6 +3,7 @@ package TaggedUDP
 import (
 	"encoding/json"
 	"fmt"
+	"time"
 
 	"github.com/Sirupsen/logrus"
 )
@@ -36,7 +37,7 @@ func (f *Formatter) Format(entry *logrus.Entry) ([]byte, error) {
 	timeStampFormat := f.TimestampFormat
 
 	if timeStampFormat == "" {
-		timeStampFormat = logrus.DefaultTimestampFormat
+		timeStampFormat = time.RFC3339
 	}
 
 	fields["timestamp"] = entry.Time.Format(timeStampFormat)
